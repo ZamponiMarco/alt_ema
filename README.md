@@ -14,8 +14,8 @@
 Clone the repository and create a virtual environment:
 
 ```
-git clone 
-cd 
+git clone https://github.com/ZamponiMarco/alt_ema
+cd alt_ema
 
 python3 -m venv .venv
 source .venv/bin/activate
