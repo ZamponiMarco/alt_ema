@@ -1,0 +1,6 @@
+http:
+  middlewares:
+    service-strip:
+      replacePathRegex:
+        regex: "/[^/]+(.*)"
+        replacement: "$1"

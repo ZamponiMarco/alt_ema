@@ -1,0 +1,41 @@
+### CONTAINERS
+
+# Avg Response Time
+rate(traefik_service_request_duration_seconds_sum{code='200'}[30s]) / rate(traefik_service_request_duration_seconds_count{code='200'}[30s])
+# Cores
+container_spec_cpu_quota{name=~"app.*"} / container_spec_cpu_period{name=~"app.*"}
+# Arrival Rate
+rate(traefik_service_requests_total{service=~"app.*@docker",code="200"}[30s])
+# CPU Usage
+rate(container_cpu_usage_seconds_total{name="app1"}[30s])
+# CPU usage normalized
+rate(container_cpu_usage_seconds_total{name=~"app.*"}[30s])
+/
+on(name)
+(
+  container_spec_cpu_quota{name=~"app.*"}
+  /
+  container_spec_cpu_period{name=~"app.*"}
+)
+
+
+### SERVICES
+
+# Avg Response Time
+rate(traefik_service_request_duration_seconds_sum{code='200'}[30s]) / rate(traefik_service_request_duration_seconds_count{code='200'}[30s])
+# Cores
+count(container_spec_cpu_quota{container_label_com_docker_swarm_service_name=~"app.*"}) by (container_label_com_docker_swarm_service_name)
+# Arrival Rate
+rate(traefik_service_requests_total{service=~"app.*@swarm",code="200"}[30s])
+# CPU Usage
+sum(rate(container_cpu_usage_seconds_total{container_label_com_docker_swarm_service_name=~"app.*"}[30s]))
+  by (container_label_com_docker_swarm_service_name)
+# CPU usage normalized
+sum(rate(container_cpu_usage_seconds_total{container_label_com_docker_swarm_service_name=~"app.*"}[30s]))
+  by (container_label_com_docker_swarm_service_name)
+/
+count(container_spec_cpu_quota{container_label_com_docker_swarm_service_name=~"app.*"}) by (container_label_com_docker_swarm_service_name)
+# Think Time User
+(1 * 100 - increase(traefik_service_request_duration_seconds_sum{code="200"}[100s]))
+/
+increase(traefik_service_requests_total{code="200"}[100s])
