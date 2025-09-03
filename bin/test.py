@@ -5,6 +5,10 @@ from libs.qn.examples.closed_queuing_network import example1, acmeair_qn
 from libs.qn.examples.controller import constant_controller
 from libs.qn.model.queuing_network import ClosedQueuingNetwork
 from libs.qn.examples.controller import autoscalers
+import os
+import json
+
+OUTPUT = 'resources/workloads'
 
 def build_polytope(horizon, skewness, l_bounds=(0.0, 1.0), l0 = 10):
     """
@@ -123,10 +127,7 @@ if __name__ == "__main__":
         [constant_controller(qn, 0, qn.max_users)] +
         autoscalers['hpa50'](qn)
     )
-
-    for sample in samples:
-        c_init = [1] * (qn.stations - 1)
-        q, s, d, c = qn.steady_state_simulation(c_init, sample, 3)
-        rtv = qn.compute_rtv(sample, s[:,1:])
-        print(rtv, sample)
-        
+    
+    os.makedirs(OUTPUT, exist_ok=True)
+    with open(os.path.join(OUTPUT, 'samples.json'), 'w') as f:
+        json.dump(samples.tolist(), f, indent=4)
