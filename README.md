@@ -22,6 +22,8 @@ source .venv/bin/activate
 python -m pip install -U pip
 ```
 
+Install Python dependency [pycvxset](https://github.com/merlresearch/pycvxset)
+
 Next, install Python dependencies:
 ```
 pip install -r requirements.txt
