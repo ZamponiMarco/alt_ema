@@ -13,17 +13,17 @@ SHAPE_NAMES = ['Free', 'Ramp', 'Sawtooth', 'Spike']
 SHAPE_NAME_MAP = dict(zip(SHAPES, SHAPE_NAMES))
 
 AUTOSCALERS = ['hpa50', 'hpa60', 'step1', 'step2']
-AUTOSCALER_NAMES = ['HPA50', 'HPA60', 'Step1', 'Step2']
+AUTOSCALER_NAMES = ['VP50', 'VP60', 'Step1', 'Step2']
 AUTOSCALER_NAME_MAP = dict(zip(AUTOSCALERS, AUTOSCALER_NAMES))
 
 def generate_tabular(data):
     """Generate a single tabular environment for the given data."""
     tabular_code = "        \\begin{tabular}{lcccc}\n"
     tabular_code += "            \\toprule\n"
-    tabular_code += "            \\emph{Autoscaler} & " + " & ".join(SHAPE_NAMES) + " \\\\\n"
+    tabular_code += "            \\emph{Autoscaler} & " + " & ".join(f'\\textbf{{{name}}}' for name in SHAPE_NAMES) + " \\\\\n"
     tabular_code += "            \\midrule\n"
     for index, row in data.iterrows():
-        tabular_code += f"            {AUTOSCALER_NAME_MAP[index]} & " + " & ".join(row.values) + " \\\\\n"
+        tabular_code += f"            \\textbf{{{AUTOSCALER_NAME_MAP[index]}}} & " + " & ".join(row.values) + " \\\\\n"
     tabular_code += "            \\bottomrule\n"
     tabular_code += "        \\end{tabular}\n"
     return tabular_code
@@ -31,16 +31,14 @@ def generate_tabular(data):
 def generate_combined_table(over_data, under_data):
     """Generate the complete table with both objectives side by side."""
     latex_code = "\\begin{table*}[t]\n"
-    latex_code += "    \\begin{minipage}{0.5\\linewidth}\n"
-    latex_code += "        \\centering\n"
+    latex_code += "    \\centering\n"
+    latex_code += "    \\textbf{Over-provisioning objective}\\\\[0.5em]\n"
     latex_code += generate_tabular(over_data)
-    latex_code += "    \\end{minipage}%\n"
-    latex_code += "    \\begin{minipage}{0.5\\linewidth}\n"
-    latex_code += "        \\centering\n"
+    latex_code += "    \\\\[1em]\n"
+    latex_code += "    \\textbf{Under-provisioning objective}\\\\[0.5em]\n"
     latex_code += generate_tabular(under_data)
-    latex_code += "    \\end{minipage}\n"
     latex_code += "    \\vspace{0.5em}\n"
-    latex_code += "    \\caption{Summary of test generation outcomes for the over-provisioning (left) and under-provisioning (right) objectives. Each cell reports whether a falsifying trace was found (\\cmark) or not (\\xmark), followed by the solving time of the falsification problem in seconds (in parentheses), or ``lim'' if the time limit was reached. Note that results marked as \\xmark and ``lim'' indicate an inconclusive outcome, whereas all other cases represent a (possibly sub-optimal) conclusive result.\n"
+    latex_code += "    \\caption{Summary of test generation outcomes for over-provisioning (top) and under-provisioning (bottom). Cells marked (\\cmark) report a falsifying trace with solving times for the first feasible and the optimal solution (or \\emph{lim} if timed out). Cells marked (\\xmark) indicate problem infeasibility with the corresponding solving time.\n"
     latex_code += "    }\n"
     latex_code += "    \\label{tab:test-generation-outcome}\n"
     latex_code += "\\end{table*}"
@@ -58,7 +56,11 @@ if __name__ == '__main__':
             with open(os.path.join(FOLDER, f'{a}_{objective}_{l}.json')) as f:
                 content = json.load(f)
                 feas = len(content['users']) > 0
-                time_str = "lim" if content['status'] == 9 else f"{content['time']:.2f}"
+                if feas:
+                    first_feas = content['solutions'][0][0]
+                    time_str = f"{first_feas:.2f}/lim" if content['status'] == 9 else f"{first_feas:.2f}/{content['time']:.2f}"
+                else:
+                    time_str = "lim" if content['status'] == 9 else f"{content['time']:.2f}"
                 data.at[a, l] = f"\\{'cmark' if feas else 'xmark'} ({time_str})"
                 
         data_dict[objective] = data
