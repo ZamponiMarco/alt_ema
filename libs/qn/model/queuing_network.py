@@ -249,7 +249,7 @@ class ClosedQueuingNetwork:
             hi = (current_core_tick + 1) * core_update_ticks
             
             ss_q, ss_s= self.steady_state(c[current_core_tick,1:], N[tick])
-            print(f"Steady state for tick {tick}: q={ss_q}, s={ss_s}")
+            #print(f"Steady state for tick {tick}: q={ss_q}, s={ss_s}")
             q[tick] = ss_q
             s[tick] = ss_s
             d[tick] = s[tick]
@@ -258,7 +258,7 @@ class ClosedQueuingNetwork:
                 for j in range(self.stations):
                     c_val = c[current_core_tick][j]
                     avg_disturbance = np.sum(d[lo:hi, j]) / core_update_ticks
-                    print("Avg Disturbance:", c_val)
+                    #print("Avg Disturbance:", c_val)
                     station_data = [c_val, avg_disturbance]
                     c[current_core_tick + 1][j] = self.controllers[j](station_data)
 
