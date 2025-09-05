@@ -31,9 +31,6 @@ if __name__ == "__main__":
         autoscalers[cli_args.autoscaler](network)
     )
     
-    print(network)
-    print(network.visit_vector @ (1/network.mu[1:]))
-    
     cores = np.array([network.max_users] + [int(core.strip()) for core in cli_args.cores.split(',')])
     if len(cores) != network.stations:
         raise ValueError(f"Expected {network.stations} cores, got {len(cores)}.")
@@ -42,14 +39,6 @@ if __name__ == "__main__":
     initial_users = cli_args.initial_users
     simulation_ticks_update = cli_args.simulation_ticks_update
     
-    q, s = network.steady_state(network.max_cores, network.max_users)
-    
-    # s = mu * min(c, q)
-    #print(q)
-    #print(s / network.mu)
-    #print(np.ceil(s / network.mu)[1:])
-    #print(sum(np.ceil(s / network.mu)[1:]))
-
     status, time, solutions, q, c, d_i, s, l, min_q_c = network.model(
         horizon, initial_users, cores, simulation_ticks_update, { 'objective': cli_args.objective, 'time_limit': 600, 'shape': cli_args.shape }
     )
