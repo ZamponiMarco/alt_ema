@@ -1,3 +1,4 @@
+import argparse
 import pygad
 import numpy as np
 import time
@@ -9,9 +10,7 @@ from libs.qn.model.queuing_network import ClosedQueuingNetwork
 from libs.qn.pwa.util import build_polytope, is_feasible, hit_and_run
 from scipy.optimize import minimize
 
-# Experiment parameters
-HORIZON = 30
-TIME_LIMIT = 30  # seconds
+OUTPUT_FOLDER = 'resources/workloads/'
 
 # Global variables
 solutions = []
@@ -24,38 +23,25 @@ network.set_controllers(
     autoscalers['hpa50'](network)
 )
 
-cores = [network.max_users] + [1] * (network.stations - 1)
-    
-horizon = HORIZON
-initial_users = 10
-simulation_ticks_update = 3
-
-A, b = build_polytope(
-    horizon=horizon,
-    skewness=network.skewness / simulation_ticks_update,
-    l_bounds=(1.0, network.max_users),
-    l0=initial_users
-)
-
 def on_gen_func(ga_instance):
     global solutions, start_time, best_fitness
     current_best_fitness = ga_instance.best_solution()[1]
     current_time = time.time() - start_time
     
-    # Track this generation's best solution
-    solutions.append([
-        current_time, 
-        current_best_fitness,
-        ga_instance.generations_completed, 
-        ])
     
     if current_best_fitness > best_fitness[0]:
         best_fitness[0] = current_best_fitness
         print(f"New best underprovisioning at generation {ga_instance.generations_completed}: {current_best_fitness}")
+        # Track this generation's best solution
+        solutions.append([
+            current_time, 
+            -current_best_fitness,
+            ga_instance.generations_completed, 
+            ])
     
     # Check if time limit has been exceeded
-    if current_time >= TIME_LIMIT:
-        print(f"Time limit of {TIME_LIMIT} seconds reached. Stopping GA.")
+    if current_time >= cli_args.time_limit:
+        print(f"Time limit of {cli_args.time_limit} seconds reached. Stopping GA.")
         return "stop"
 
 def on_mutation(ga_instance, offspring_mutation):
@@ -118,9 +104,30 @@ def fitness(individual, network, cores, simulation_ticks_update):
     if s is None:
         return -float('inf')
     underprovisioning = network.compute_rtv(N, s)
+    
     return underprovisioning
 
 if __name__ == "__main__":
+    args = argparse.ArgumentParser(description='Random load generation for a closed queuing network.')
+    args.add_argument('--horizon', type=int, default=30, help='Horizon for the simulation.')
+    args.add_argument('--cores', type=str, default=','.join(['1'] * (network.stations - 1)), help="Comma-separated list of integers for cores (e.g., 4,1,1,1)")
+    args.add_argument('--time_limit', type=int, default=30, help='Time limit for random sampling in seconds.')
+    args.add_argument('--initial_users', type=int, default=10, help='Initial number of users.')
+    args.add_argument('--output_file', type=str, default='test_random.json', help='Output file for results.')
+    cli_args = args.parse_args()
+    
+    cores = np.array([network.max_users] + [int(core.strip()) for core in cli_args.cores.split(',')])
+
+    horizon = cli_args.horizon
+    initial_users = cli_args.initial_users
+    simulation_ticks_update = 3
+
+    A, b = build_polytope(
+        horizon=horizon,
+        skewness=network.skewness / simulation_ticks_update,
+        l_bounds=(1.0, network.max_users),
+        l0=initial_users
+    )
     
     # Initialize population using hit-and-run
     pop_size = 50
@@ -131,7 +138,7 @@ if __name__ == "__main__":
         repair_individual(sample, A, b)
         population.append(sample)
 
-    time_limit = TIME_LIMIT  # seconds
+    time_limit = cli_args.time_limit  # seconds
     print("Starting PyGAD GA")
     start_time = time.time()
     best_fitness = [-float('inf')]
@@ -169,11 +176,10 @@ if __name__ == "__main__":
     
     # Save the best load
     if best_solution is not None:
-        output_dir = 'resources/workloads'
-        os.makedirs(output_dir, exist_ok=True)
-        with open(os.path.join(output_dir, 'test_ga.json'), 'w') as f:
+        os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+        with open(os.path.join(OUTPUT_FOLDER, cli_args.output_file), 'w') as f:
             json.dump(output_data, f, indent=4)
-        print(f"Best load saved to {output_dir}/test_ga.json")
+        print(f"Best load saved to {OUTPUT_FOLDER}{cli_args.output_file}")
     else:
         print("No feasible loads found.")
     

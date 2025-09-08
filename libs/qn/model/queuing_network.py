@@ -340,11 +340,11 @@ class ClosedQueuingNetwork:
                     model.addConstr(under_base_aux == l[t] - ( self.mu[0] + 1) * q[t][0], "under_base_aux")
 
                 if objective == 'underprovisioning':
-                    model.addConstr(gp.quicksum(underprovisioning_base[t] for t in range(horizon)) >= tol)
+                    model.addConstr(gp.quicksum(underprovisioning_base[t] for t in range(horizon)) >= options.get('tol', 20))
                    
                     underprovisioning_base_obj = - gp.quicksum(objective_mask[t] * underprovisioning_base[t] for t in range(horizon))
-                    model.setObjectiveN(underprovisioning_base_obj, index=0, weight=4)
-                    model.setObjectiveN(penalty, index=1, weight=1)
+                    model.setObjectiveN(underprovisioning_base_obj, index=0, weight=options.get('alpha', 4))
+                    model.setObjectiveN(penalty, index=1, weight=options.get('beta', 1))
                 else:
                     underprovisioning_time = model.addMVar((horizon), name='underprovisioning_time') # Underprovisioning time
                     
@@ -368,11 +368,11 @@ class ClosedQueuingNetwork:
                     model.addConstrs((overprovisioning[t][j] == gp.max_(over_aux[j], 0) for j in range(self.stations)), f"overprovisioning_{t}")
                 
                 if objective == 'overprovisioning':
-                    model.addConstr(gp.quicksum(overprovisioning[t][j] for t in range(horizon) for j in range(1, self.stations)) >= tol)
+                    model.addConstr(gp.quicksum(overprovisioning[t][j] for t in range(horizon) for j in range(1, self.stations)) >= options.get('tol', 20))
                     
                     overprovisioning_obj = - gp.quicksum(objective_mask[t] * overprovisioning[t][j] for t in range(horizon) for j in range(1, self.stations))
-                    model.setObjectiveN(overprovisioning_obj, index=0, weight=10)
-                    model.setObjectiveN(penalty, index=1, weight=1)
+                    model.setObjectiveN(overprovisioning_obj, index=0, weight=options.get('alpha', 10))
+                    model.setObjectiveN(penalty, index=1, weight=options.get('beta', 1))
                 else:
                     overprovisioning_time = model.addMVar((horizon), name='overprovisioning_time') # Overprovisioning time
                     

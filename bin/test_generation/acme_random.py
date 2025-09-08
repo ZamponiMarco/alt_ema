@@ -6,10 +6,9 @@ import numpy as np
 import time
 import json
 import os
+import argparse
 
-# Experiment parameters
-HORIZON = 30
-TIME_LIMIT = 30  # seconds
+OUTPUT_FOLDER = 'resources/workloads/'
 
 if __name__ == "__main__":
     network: ClosedQueuingNetwork = acmeair_qn()
@@ -18,9 +17,18 @@ if __name__ == "__main__":
         autoscalers['hpa50'](network)
     )
     
-    cores = [network.max_users] + [1] * (network.stations - 1)
-    horizon = HORIZON
-    initial_users = 10
+    args = argparse.ArgumentParser(description='Random load generation for a closed queuing network.')
+    args.add_argument('--horizon', type=int, default=30, help='Horizon for the simulation.')
+    args.add_argument('--cores', type=str, default=','.join(['1'] * (network.stations - 1)), help="Comma-separated list of integers for cores (e.g., 4,1,1,1)")
+    args.add_argument('--time_limit', type=int, default=30, help='Time limit for random sampling in seconds.')
+    args.add_argument('--initial_users', type=int, default=10, help='Initial number of users.')
+    args.add_argument('--output_file', type=str, default='test_random.json', help='Output file for results.')
+    cli_args = args.parse_args()
+    
+    cores = np.array([network.max_users] + [int(core.strip()) for core in cli_args.cores.split(',')])
+    
+    horizon = cli_args.horizon
+    initial_users = cli_args.initial_users
     simulation_ticks_update = 3
     
     A, b = build_polytope(
@@ -34,7 +42,7 @@ if __name__ == "__main__":
     best_underprovisioning = float('inf')
     best_load = None
     start_time = time.time()
-    max_time = TIME_LIMIT  # seconds
+    max_time = cli_args.time_limit  # seconds
     attempts = 0  # Counter for random points tried
     solutions = []  # List to track all solutions
     print(f"Starting random sampling with time limit {max_time}s")
@@ -70,7 +78,7 @@ if __name__ == "__main__":
             current_time = time.time() - start_time
             solutions.append([
                 current_time, 
-                underprovisioning,
+                -underprovisioning,
                 attempts, 
                 ])
     
@@ -89,11 +97,10 @@ if __name__ == "__main__":
     
     # Save the best load to a file
     if best_load is not None:
-        output_dir = 'resources/workloads'
-        os.makedirs(output_dir, exist_ok=True)
-        with open(os.path.join(output_dir, 'test_random.json'), 'w') as f:
+        os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+        with open(os.path.join(OUTPUT_FOLDER, cli_args.output_file), 'w') as f:
             json.dump(output_data, f, indent=4)
-        print(f"Best load saved to {output_dir}/test_random.json")
+        print(f"Best load saved to {OUTPUT_FOLDER}{cli_args.output_file}")
     else:
         print("No feasible loads found within the time limit.")
     
