@@ -1,14 +1,6 @@
 import numpy as np
-from scipy.optimize import linprog
 from scipy.linalg import null_space
-from libs.qn.examples.closed_queuing_network import example1, acmeair_qn
-from libs.qn.examples.controller import constant_controller
-from libs.qn.model.queuing_network import ClosedQueuingNetwork
-from libs.qn.examples.controller import autoscalers
-import os
-import json
 
-OUTPUT = 'resources/workloads'
 
 def build_polytope(horizon, skewness, l_bounds=(0.0, 1.0), l0 = 10):
     """
@@ -110,24 +102,3 @@ def hit_and_run(A, b, x0, n_samples, burn_in=1000, steps_per_sample=100):
             samples.append(x.copy())
 
     return np.array(samples)
-
-
-# Example usage
-if __name__ == "__main__":
-    horizon = 18
-    skewness = 10
-    l_bounds = (1.0, 60.0)
-
-    A, b = build_polytope(horizon, skewness, l_bounds=l_bounds, l0=10)
-    x0 = np.array([10] * horizon)
-    samples = hit_and_run(A, b, x0, n_samples=10)
-    
-    qn: ClosedQueuingNetwork = acmeair_qn()
-    qn.set_controllers(
-        [constant_controller(qn, 0, qn.max_users)] +
-        autoscalers['hpa50'](qn)
-    )
-    
-    os.makedirs(OUTPUT, exist_ok=True)
-    with open(os.path.join(OUTPUT, 'samples.json'), 'w') as f:
-        json.dump(samples.tolist(), f, indent=4)

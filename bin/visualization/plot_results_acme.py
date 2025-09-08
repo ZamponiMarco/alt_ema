@@ -60,13 +60,11 @@ INITIAL_CORES = np.array([
 load = json.load(open(os.path.join(TRAJECTORY_FOLDER, 'test.json')))
 TRAJECTORY = np.array(load['users'])
 
-q, s, d, c = network.steady_state_simulation(
+s, c = network.steady_state_simulation(
     INITIAL_CORES,
     TRAJECTORY,
     3
 )
-
-r = np.array(q) / np.array(s)
 
 theory_cores = c[:-1]
 new_cores = []
@@ -77,10 +75,6 @@ for row in theory_cores:
 theory_cores = np.array(new_cores)
 
 theory_arrival_rates = s
-
-theory_response_times = r
-
-theory_queues = q
 
 theory_base_response_times = (TRAJECTORY / np.array(s[:,0]))-network.mu[0]
 

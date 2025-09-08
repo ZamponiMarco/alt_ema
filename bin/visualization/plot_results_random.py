@@ -77,13 +77,11 @@ if __name__ == '__main__':
             autoscalers['hpa50'](network)
         )
         
-        q, s, d, c = network.steady_state_simulation(
+        s, c = network.steady_state_simulation(
             INITIAL_CORES,
             trajectory,
             3
         )
-        
-        r = np.array(q) / np.array(s)
 
         theory_cores = c[:-1]
         new_cores = []
@@ -94,10 +92,6 @@ if __name__ == '__main__':
         theory_cores = np.array(new_cores)
 
         theory_arrival_rates = s
-
-        theory_response_times = r
-
-        theory_queues = q
 
         theory_base_response_times = (trajectory / np.array(s[:,0]))- 1/network.mu[0]
 
