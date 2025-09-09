@@ -125,7 +125,7 @@ class ClosedQueuingNetwork:
         else:
             q_val = q.X
             s_val = s.X
-            return q_val, s_val
+            return s_val
 
     def steady_state(self, c: list[float], N: int):
         E = 1.0 / np.asarray(self.mu)
