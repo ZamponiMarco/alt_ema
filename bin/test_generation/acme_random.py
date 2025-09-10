@@ -81,6 +81,12 @@ if __name__ == "__main__":
                 -underprovisioning,
                 attempts, 
                 ])
+            
+    solutions.append([
+        time.time() - start_time, 
+        best_underprovisioning,
+        attempts, 
+    ])
     
     elapsed_time = time.time() - start_time
     print(f"Random sampling completed in {elapsed_time:.2f} seconds, attempts: {attempts}, best underprovisioning: {best_underprovisioning:.2f}")
