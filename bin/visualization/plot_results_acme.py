@@ -66,19 +66,11 @@ s, c = network.steady_state_simulation(
     3
 )
 
-theory_cores = c[:-1]
-new_cores = []
-for row in theory_cores:
-    new_cores.append(row)
-    new_cores.append(row)
-    new_cores.append(row)
-theory_cores = np.array(new_cores)
-
 theory_arrival_rates = s
 
 theory_base_response_times = (TRAJECTORY / np.array(s[:,0]))-network.mu[0]
 
-def plot_results(pd_data, theory, label_prefix, output_file):
+def plot_results(pd_data, theory, output_file):
     plt.figure(figsize=(6, 3.5))
     # Plot measured (dashed)
     for idx, (key, item) in enumerate(pd_data.items()):
@@ -100,7 +92,7 @@ def plot_results(pd_data, theory, label_prefix, output_file):
     plt.xlabel('$t$', fontsize=12)
     plt.ylabel('$\mathbf{s}(t)$', fontsize=12)
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_FOLDER, f'{output_file}.pdf'))
+    plt.savefig(os.path.join(OUTPUT_FOLDER, f'{output_file}.pdf'), dpi=300, bbox_inches='tight')
 
 def process_subfolder(change_interval_folder, subfolder, pattern):
     folder_path = os.path.join(INITIAL_FOLDER, change_interval_folder, subfolder)
@@ -119,31 +111,30 @@ def process_subfolder(change_interval_folder, subfolder, pattern):
 if __name__ == '__main__':
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
     for change_interval_folder in os.listdir(INITIAL_FOLDER):
-        cores_data = process_subfolder(change_interval_folder, 'cores', r'Cores\[(\d+)\]')
         arrival_data = process_subfolder(change_interval_folder, 'arrival_rates', r'Throughput\[(\d+)\]')
         response_data = process_subfolder(change_interval_folder, 'response_times', r'ResponseTime\[(\d+)\]')
         
         runs = len(arrival_data[1]) if arrival_data else 0
         rtvs = np.array([])
         for run in range(runs):
-            s = np.zeros((len(TRAJECTORY), network.stations - 1))
+            s = np.zeros((len(TRAJECTORY), network.stations))
             for i in range(len(TRAJECTORY)):
                 for j in range(network.stations - 1):
-                    s[i, j] = arrival_data[j + 1][run][i]
+                    s[i, j + 1] = arrival_data[j + 1][run][i]
+                P = network.probabilities[1:, 0].T
+                s[i, 0] = P@s[i, 1:]
             rtvs = np.append(rtvs, network.compute_rtv(TRAJECTORY, s))
                 
         measured_rtv = rtvs.mean() if rtvs.size > 0 else 0.0
         measured_rtv_std = rtvs.std()
-        predicted_rtv = network.compute_rtv(TRAJECTORY, theory_arrival_rates[:, 1:])
+        predicted_rtv = network.compute_rtv(TRAJECTORY, theory_arrival_rates)
         
         print("RTV Measured:", measured_rtv)
         print("RTV Measured Std:", measured_rtv_std)
         print("RTV Predicted:", predicted_rtv)
         
-        if cores_data:
-            plot_results(cores_data, theory_cores, 'Station', f'{change_interval_folder}_cores')
         if arrival_data:
-            plot_results(arrival_data, theory_arrival_rates, 'Station', f'{change_interval_folder}_arrival_rates')
+            plot_results(arrival_data, theory_arrival_rates, f'{change_interval_folder}_arrival_rates')
         if response_data:
             base_responses_list = []
             for el in range(len(response_data[1])):
@@ -165,4 +156,4 @@ if __name__ == '__main__':
             plt.ylabel('$r_{\\text{ref}}(t)$', fontsize=10)
 
             plt.tight_layout()
-            plt.savefig(os.path.join(OUTPUT_FOLDER, f'{change_interval_folder}_base_response_times.pdf'))
+            plt.savefig(os.path.join(OUTPUT_FOLDER, f'{change_interval_folder}_base_response_times.pdf'), dpi=300, bbox_inches='tight')
