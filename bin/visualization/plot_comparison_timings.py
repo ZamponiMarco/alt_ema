@@ -22,7 +22,7 @@ def process_solutions_data():
     # Initialize arrays to hold dataframes for each run
     ga_dfs = []
     random_dfs = []
-    test_df = None
+    test_dfs = []
 
     # Process GA files
     ga_files = glob.glob(os.path.join(DATA_FOLDER, 'test_ga_*.json'))
@@ -48,17 +48,18 @@ def process_solutions_data():
             temp_df = temp_df[['time', 'fitness']]  # Keep only time and fitness
             random_dfs.append(temp_df)
 
-    # Process test.json file
-    test_file = os.path.join(DATA_FOLDER, 'test.json')
-    if os.path.exists(test_file):
-        data = load_json_file(test_file)
+    # Process Opt Files
+    opt_files = glob.glob(os.path.join(DATA_FOLDER, 'test_opt_*.json'))
+    for file_path in opt_files:
+        data = load_json_file(file_path)
+        
         if 'solutions' in data:
             solutions = data['solutions']
             # Create dataframe with only time and fitness columns
             temp_df = pd.DataFrame(solutions, columns=['time', 'fitness'])
-            test_df = temp_df[['time', 'fitness']]
+            test_dfs.append(temp_df[['time', 'fitness']])
 
-    return ga_dfs, random_dfs, test_df
+    return ga_dfs, random_dfs, test_dfs
 
 def plot_random_runs_summary(dfs, output_name='runs_summary.png', title=None):
     """Generic summary plot for runs using zero-order hold alignment.
@@ -117,7 +118,7 @@ def plot_random_runs_summary(dfs, output_name='runs_summary.png', title=None):
     mean_fitness = np.mean(all_fitness_at_time, axis=0)
     std_dev = np.std(all_fitness_at_time, axis=0)
 
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(6, 3.5))
     plt.plot(time_points, mean_fitness, 'b-', linewidth=2, label='Mean')
     plt.fill_between(time_points, mean_fitness - std_dev, mean_fitness + std_dev,
                      alpha=0.3, color='blue', label='Mean ± 1σ')
@@ -134,12 +135,12 @@ def plot_random_runs_summary(dfs, output_name='runs_summary.png', title=None):
     plt.savefig(os.path.join(OUTPUT_FOLDER, output_name), dpi=300, bbox_inches='tight')
     plt.close()
 
-def plot_combined_summary(ga_dfs, random_dfs, test_df, output_name='combined_summary.png'):
+def plot_combined_summary(ga_dfs, random_dfs, opt_dfs, output_name='combined_summary.png'):
     """Plot GA, Random and Test summaries together for comparison.
 
     Each argument can be a list of DataFrames (runs) or a single DataFrame.
     """
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(6, 3.5))
 
     # Helper to compute mean curve for a list of runs on that group's own grid
     def mean_curve_for_group(run_dfs):
@@ -189,16 +190,7 @@ def plot_combined_summary(ga_dfs, random_dfs, test_df, output_name='combined_sum
     # Compute mean curves separately
     ga_t, ga_mean, ga_std = mean_curve_for_group(ga_dfs)
     rand_t, rand_mean, rand_std = mean_curve_for_group(random_dfs)
-    test_t, test_mean = (None, None)
-    
-    if isinstance(test_df, pd.DataFrame) and len(test_df) > 0:
-        # single run: use its own times
-        test_t = np.sort(test_df['time'].astype(float).values)
-        test_mean = -np.asarray(test_df['fitness'].astype(float).values)
-        # prepend 0 if needed
-        if test_t.size == 0 or test_t[0] > 0.0:
-            test_t = np.concatenate([[0.0], test_t])
-            test_mean = np.concatenate([[0.0], test_mean])
+    test_t, test_mean, test_std = mean_curve_for_group(opt_dfs)
 
     max_time = max(
         (ga_t[-1] if ga_t is not None else 0.0),
@@ -214,6 +206,7 @@ def plot_combined_summary(ga_dfs, random_dfs, test_df, output_name='combined_sum
     test_mean = np.append(test_mean, test_mean[-1])
     ga_std = np.append(ga_std, ga_std[-1])
     rand_std = np.append(rand_std, rand_std[-1])
+    test_std = np.append(test_std, test_std[-1])
 
     # Plot each mean on its own time grid
     if rand_mean is not None:
@@ -224,6 +217,7 @@ def plot_combined_summary(ga_dfs, random_dfs, test_df, output_name='combined_sum
         plt.fill_between(ga_t, ga_mean - ga_std, ga_mean + ga_std, color='lightcoral', alpha=0.2)
     if test_mean is not None:
         plt.plot(test_t, test_mean, label='Opt', color='lightblue')
+        plt.fill_between(test_t, test_mean - test_std, test_mean + test_std, color='lightblue', alpha=0.2)
 
     plt.xlabel('Time (seconds)')
     plt.ylabel('RTV')
@@ -243,7 +237,7 @@ if __name__ == "__main__":
     )
 
     # Process the solution data
-    ga_dfs, random_dfs, test_df = process_solutions_data()
+    ga_dfs, random_dfs, test_dfs = process_solutions_data()
 
     # Plot the random runs
     if random_dfs:
@@ -256,9 +250,9 @@ if __name__ == "__main__":
         plot_random_runs_summary(ga_dfs, output_name='ga_runs_summary.png',
                                  title='Genetic Algorithm Summary - Mean Fitness with Deviation')
         
-    if test_df is not None:
+    if test_dfs:
         print("\nGenerating plot for test run...")
-        plot_random_runs_summary(test_df, output_name='test_run.png',
+        plot_random_runs_summary(test_dfs, output_name='test_run.png',
                                  title='Test Run - Fitness Over Time')
-        
-    plot_combined_summary(ga_dfs, random_dfs, test_df, output_name='combined_summary.png')
+
+    plot_combined_summary(ga_dfs, random_dfs, test_dfs, output_name='combined_summary.png')

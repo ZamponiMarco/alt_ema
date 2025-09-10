@@ -162,7 +162,7 @@ if __name__ == '__main__':
             leg.set_alpha(0.7)
             plt.grid(True, linestyle='--', alpha=0.6)
             plt.xlabel('$t$', fontsize=10)
-            plt.ylabel('$R(t)$', fontsize=10)
+            plt.ylabel('$r_{\\text{ref}}(t)$', fontsize=10)
 
             plt.tight_layout()
             plt.savefig(os.path.join(OUTPUT_FOLDER, f'{change_interval_folder}_base_response_times.pdf'))
