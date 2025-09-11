@@ -118,11 +118,11 @@ def plot_combined_summary(ga_dfs, opt_dfs, output_name='combined_summary.png'):
 
     # Plot each mean on its own time grid
     if ga_mean is not None:
-        ax.plot(ga_t, ga_mean, label='Genetic Algorithm', color='lightblue')
-        ax.fill_between(ga_t, ga_mean - ga_std, ga_mean + ga_std, color='lightblue', alpha=0.2)
+        ax.step(ga_t, ga_mean, label='Genetic Algorithm', color='lightblue', where='post')
+        ax.fill_between(ga_t, ga_mean - ga_std, ga_mean + ga_std, color='lightblue', alpha=0.2, step='post')
     if test_mean is not None:
-        ax.plot(test_t, test_mean, label='MILP', color='lightcoral')
-        ax.fill_between(test_t, test_mean - test_std, test_mean + test_std, color='lightcoral', alpha=0.2)
+        ax.step(test_t, test_mean, label='MILP', color='lightcoral', where='post')
+        ax.fill_between(test_t, test_mean - test_std, test_mean + test_std, color='lightcoral', alpha=0.2, step='post')
 
     ax.set_xlabel('Time (seconds)', fontsize=12)
     ax.set_ylabel('Best $- \\rho_{\\varphi}$', fontsize=12)

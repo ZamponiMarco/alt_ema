@@ -127,11 +127,11 @@ def plot_combined_summary(ga_dfs, random_dfs, xlim_max=500.0, ax=None, is_inner=
 
     # Plot each mean on its own sample grid
     if rand_mean is not None:
-        ax.plot(rand_s, rand_mean, label='Random', color='lightgreen')
-        ax.fill_between(rand_s, rand_mean - rand_std, rand_mean + rand_std, color='lightgreen', alpha=0.2)
+        ax.step(rand_s, rand_mean, label='Random', color='lightgreen', where='post')
+        ax.fill_between(rand_s, rand_mean - rand_std, rand_mean + rand_std, color='lightgreen', alpha=0.2, step='post')
     if ga_mean is not None:
-        ax.plot(ga_s, ga_mean, label='Genetic Algorithm', color='lightblue')
-        ax.fill_between(ga_s, ga_mean - ga_std, ga_mean + ga_std, color='lightblue', alpha=0.2)
+        ax.step(ga_s, ga_mean, label='Genetic Algorithm', color='lightblue', where='post')
+        ax.fill_between(ga_s, ga_mean - ga_std, ga_mean + ga_std, color='lightblue', alpha=0.2, step='post')
 
     if is_inner:
         ax.axhline(y=20, color='lightcoral', linewidth=0.5)
