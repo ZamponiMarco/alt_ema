@@ -211,8 +211,6 @@ def acmeair_qn():
     rts = np.array([103.7, 101.5, 72.6, 31.8, 56.8, 27.5, 124.6, 52.3, 92.8])
     mu = 1 / (rts*5/1000)
     
-    print(mu)
-
     max_cores = np.array([4.0] * stations)
     min_cores = np.array([1.0] * stations)
     

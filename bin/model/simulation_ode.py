@@ -66,7 +66,7 @@ if __name__ == "__main__":
     )
 
     # Steady State Simulation
-    q, s, d, c = network.steady_state_simulation(
+    s, c = network.steady_state_simulation(
         len(TRAJECTORY),
         INITIAL_CORES,
         TRAJECTORY,
@@ -74,8 +74,6 @@ if __name__ == "__main__":
     )
     print(np.array(s))
     print(np.array(c))
-    res_time = np.array(q) / np.array(s)
-    print(res_time)
     
     os.makedirs("resources/simulation", exist_ok=True)
     

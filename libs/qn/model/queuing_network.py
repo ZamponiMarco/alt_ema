@@ -96,7 +96,7 @@ class ClosedQueuingNetwork:
         c = np.hstack(([self.max_users], c))
         model = gp.Model("steady_state")
         model.Params.OutputFlag = 0
-        model.Params.TimeLimit = 60
+        model.Params.TimeLimit = 10
 
         q = model.addMVar(self.stations, lb=0, ub=self.max_users, name='queue')
         s = model.addMVar(self.stations, lb=0, name='throughput')
@@ -125,78 +125,23 @@ class ClosedQueuingNetwork:
         else:
             q_val = q.X
             s_val = s.X
-            return q_val, s_val
+            return s_val
 
-    def steady_state(self, c: list[float], N: float):
-        """
-        Computes the steady state solution for a closed queuing network given an assignment of cores and
-        the amount of users currently using the system using SCIP solver
-
-        :param c: amount of cores assigned to each station
-        :param N: amount of users in the system
-        :return: (q, s) if the problem is feasible, None otherwise
-        """
-
-        c = np.hstack(([self.max_users], c))
-        model = SCIPModel("steady_state_scip")
-        model.setParam('display/verblevel', 0)  # Suppress output
-        model.setParam('limits/time', 60)  # Time limit in seconds
-
-        # Variables
-        q = {}  # Queue lengths
-        s = {}  # Service rates/throughput
-        min_q_c = {}  # Auxiliary variables for min(q[j], c[j])
-        z = {}  # Binary variables for min constraint
-
-        for j in range(self.stations):
-            q[j] = model.addVar(vtype="C", lb=0, ub=self.max_users, name=f'queue_{j}')
-            s[j] = model.addVar(vtype="C", lb=0, name=f'throughput_{j}')
-            min_q_c[j] = model.addVar(vtype="C", lb=0, name=f'min_q_c_{j}')
-            z[j] = model.addVar(vtype="B", name=f'z_{j}')  # Binary for min constraint
-
-        # Min constraint: min_q_c[j] = min(q[j], c[j])
-        # Using big-M formulation with binary variables
-        M = self.max_users  # Big-M constant
-        for j in range(self.stations):
-            # If z[j] = 1, then q[j] <= c[j] and min_q_c[j] = q[j]
-            # If z[j] = 0, then q[j] > c[j] and min_q_c[j] = c[j]
-            model.addCons(min_q_c[j] <= q[j])
-            model.addCons(min_q_c[j] <= c[j])
-            model.addCons(min_q_c[j] >= q[j] - M * (1 - z[j]))
-            model.addCons(min_q_c[j] >= c[j] - M * z[j])
-
-        # Throughput constraints: s[j] = mu[j] * min_q_c[j]
-        for j in range(self.stations):
-            model.addCons(s[j] == self.mu[j] * min_q_c[j])
-
-        # Steady-state condition: stoich.T @ s == 0
-        for i in range(self.stations):
-            steady_expr = 0
-            for j in range(self.stations):
-                steady_expr += self.stoich.T[i, j] * s[j]
-            model.addCons(steady_expr == 0)
-
-        # Total users constraint
-        total_q = sum(q[j] for j in range(self.stations))
-        model.addCons(total_q == N)
-
-        # Dummy objective (feasibility problem)
-        model.setObjective(0, "minimize")
-
-        # Solve
-        model.optimize()
-
-        status = model.getStatus()
-        if status == "infeasible":
-            print("Problem is infeasible.")
-            return None
-        elif status == "optimal" or status == "bestsollimit":
-            q_val = np.array([model.getVal(q[j]) for j in range(self.stations)])
-            s_val = np.array([model.getVal(s[j]) for j in range(self.stations)])
-            return q_val, s_val
+    def steady_state(self, c: list[float], N: int):
+        E = 1.0 / np.asarray(self.mu)
+        zeta = np.hstack(([1.0], self.visit_vector))
+        
+        D = float(np.dot(E, zeta))
+        rhs = (E[1:] * zeta[1:] / D) * float(N)
+        underloaded = np.all(c > rhs)
+            
+        T = np.empty(self.stations, dtype=float)
+        if underloaded:
+            scale = float(N) / D
         else:
-            print(f"Solver status: {status}")
-            return None
+            scale = float(np.min(c / (E[1:] * zeta[1:])))
+        T[:] = zeta * scale
+        return T
 
     def transient_simulation(self, simulation_ticks, delta_t, q_init, c_init, update_ticks):
         ticks = int(simulation_ticks / update_ticks)
@@ -239,30 +184,26 @@ class ClosedQueuingNetwork:
         c = np.zeros((core_ticks + 1, self.stations))
         c[0] = np.hstack(([self.max_users], c_init))
 
-        q = np.zeros((ticks, self.stations))
         s = np.zeros((ticks, self.stations))
-        d = np.zeros((ticks, self.stations))
 
         for tick in range(ticks):
             current_core_tick = int(tick / core_update_ticks)
             lo = current_core_tick * core_update_ticks
             hi = (current_core_tick + 1) * core_update_ticks
             
-            ss_q, ss_s= self.steady_state(c[current_core_tick,1:], N[tick])
-            print(f"Steady state for tick {tick}: q={ss_q}, s={ss_s}")
-            q[tick] = ss_q
+            ss_s= self.steady_state(c[current_core_tick,1:], N[tick])
+            #print(f"Steady state for tick {tick}: q={ss_q}, s={ss_s}")
             s[tick] = ss_s
-            d[tick] = s[tick]
 
             if (tick + 1) % core_update_ticks == 0:
                 for j in range(self.stations):
                     c_val = c[current_core_tick][j]
-                    avg_disturbance = np.sum(d[lo:hi, j]) / core_update_ticks
-                    print("Avg Disturbance:", c_val)
+                    avg_disturbance = np.sum(s[lo:hi, j]) / core_update_ticks
+                    #print("Avg Disturbance:", c_val)
                     station_data = [c_val, avg_disturbance]
                     c[current_core_tick + 1][j] = self.controllers[j](station_data)
 
-        return q, s, d, c
+        return s, c
 
     def model(self, horizon, loads, c_init, simulation_ticks_update, options: dict = {}):
         simulation = False
@@ -399,11 +340,11 @@ class ClosedQueuingNetwork:
                     model.addConstr(under_base_aux == l[t] - ( self.mu[0] + 1) * q[t][0], "under_base_aux")
 
                 if objective == 'underprovisioning':
-                    model.addConstr(gp.quicksum(underprovisioning_base[t] for t in range(horizon)) >= tol)
+                    model.addConstr(gp.quicksum(underprovisioning_base[t] for t in range(horizon)) >= options.get('tol', 20))
                    
                     underprovisioning_base_obj = - gp.quicksum(objective_mask[t] * underprovisioning_base[t] for t in range(horizon))
-                    model.setObjectiveN(underprovisioning_base_obj, index=0, weight=4)
-                    model.setObjectiveN(penalty, index=1, weight=1)
+                    model.setObjectiveN(underprovisioning_base_obj, index=0, weight=options.get('alpha', 4))
+                    model.setObjectiveN(penalty, index=1, weight=options.get('beta', 1))
                 else:
                     underprovisioning_time = model.addMVar((horizon), name='underprovisioning_time') # Underprovisioning time
                     
@@ -427,11 +368,11 @@ class ClosedQueuingNetwork:
                     model.addConstrs((overprovisioning[t][j] == gp.max_(over_aux[j], 0) for j in range(self.stations)), f"overprovisioning_{t}")
                 
                 if objective == 'overprovisioning':
-                    model.addConstr(gp.quicksum(overprovisioning[t][j] for t in range(horizon) for j in range(1, self.stations)) >= tol)
+                    model.addConstr(gp.quicksum(overprovisioning[t][j] for t in range(horizon) for j in range(1, self.stations)) >= options.get('tol', 20))
                     
                     overprovisioning_obj = - gp.quicksum(objective_mask[t] * overprovisioning[t][j] for t in range(horizon) for j in range(1, self.stations))
-                    model.setObjectiveN(overprovisioning_obj, index=0, weight=10)
-                    model.setObjectiveN(penalty, index=1, weight=1)
+                    model.setObjectiveN(overprovisioning_obj, index=0, weight=options.get('alpha', 10))
+                    model.setObjectiveN(penalty, index=1, weight=options.get('beta', 1))
                 else:
                     overprovisioning_time = model.addMVar((horizon), name='overprovisioning_time') # Overprovisioning time
                     
@@ -467,10 +408,10 @@ class ClosedQueuingNetwork:
 
     def compute_rtv(self, l: np.ndarray, s: np.ndarray) -> float:
         ticks = len(l)
-        P = self.probabilities[1:, 0].T
         rtv = 0.0
         for t in range(ticks):
-            rtv += max(l[t] - P@s[t]*(1 + 1/self.mu[0]), 0)
+            q0 = s[t][0] / self.mu[0]
+            rtv += max(l[t] - ( self.mu[0] + 1) * q0, 0)
         return rtv
         
     def __str__(self):

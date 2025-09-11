@@ -37,7 +37,7 @@ All the experiments scripts are contained in the folder `script`, thus, from the
 cd script
 ```
 
-Here the steps to execute the three experiments are presented. After each experiment is concluded remove generated the data from the folder before starting a new one.
+Here the steps to execute the experiments are presented. After each experiment is concluded remove generated the data from the folder before starting a new one.
 
 ### AcmeAir
 
@@ -64,6 +64,12 @@ Calling `plot_random.sh` the results of the experiments will be plotted in pictu
 Calling the script `load_two_tier.sh` will generate a folder `resources/workloads` containing the workloads for all the combinations of elements (autoscaler/load shape/objective) in the optimization problem.
 
 Consequently, calling the script `plot_two_tier.sh` will copy in the computer clipboard the LaTeX tables to report the results of the load generation.
+
+### Comparison
+
+Calling the script `load_acme_comparison.sh` will generate a folder `resources/workloads` containing all the generated workloads using the three different methods (optimization, genetic algorithm, random search). 
+
+Subsequently, calling the script `plot_acme_comparison.sh` will generate the plots in the folder `resources/pics`.
 
 ## Paper Data
 

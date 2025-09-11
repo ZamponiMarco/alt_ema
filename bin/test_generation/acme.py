@@ -24,15 +24,16 @@ if __name__ == "__main__":
     args.add_argument('--objective', type=str, default='underprovisioning', choices=objectives, help='Objective to optimize.')
     args.add_argument('--shape', type=str, default='free', choices=shapes, help='Load shape.')
     args.add_argument('--output_file', type=str, default=None, help='Output file for results.')
+    args.add_argument('--time_limit', type=int, default=600, help='Time limit for the optimization in seconds.')
+    args.add_argument('--tolerance', type=float, help='Tolerance for the optimization objective.')
+    args.add_argument('--alpha', type=int, help='Alpha parameter for the optimization objective.')
+    args.add_argument('--beta', type=int, help='Beta parameter for the optimization objective.')
     cli_args = args.parse_args()
     
     network.set_controllers(
         [constant_controller(network, 0, network.max_users)] +
         autoscalers[cli_args.autoscaler](network)
     )
-    
-    print(network)
-    print(network.visit_vector @ (1/network.mu[1:]))
     
     cores = np.array([network.max_users] + [int(core.strip()) for core in cli_args.cores.split(',')])
     if len(cores) != network.stations:
@@ -42,16 +43,21 @@ if __name__ == "__main__":
     initial_users = cli_args.initial_users
     simulation_ticks_update = cli_args.simulation_ticks_update
     
-    q, s = network.steady_state(network.max_cores, network.max_users)
+    options = {
+        'objective': cli_args.objective,
+        'shape': cli_args.shape,
+        'time_limit': cli_args.time_limit,
+    }
     
-    # s = mu * min(c, q)
-    #print(q)
-    #print(s / network.mu)
-    #print(np.ceil(s / network.mu)[1:])
-    #print(sum(np.ceil(s / network.mu)[1:]))
-
+    if cli_args.tolerance is not None:
+        options['tol'] = cli_args.tolerance
+    if cli_args.alpha is not None:
+        options['alpha'] = cli_args.alpha
+    if cli_args.beta is not None:
+        options['beta'] = cli_args.beta
+    
     status, time, solutions, q, c, d_i, s, l, min_q_c = network.model(
-        horizon, initial_users, cores, simulation_ticks_update, { 'objective': cli_args.objective, 'time_limit': 600, 'shape': cli_args.shape }
+        horizon, initial_users, cores, simulation_ticks_update, options
     )
     
     output_file = cli_args.output_file
