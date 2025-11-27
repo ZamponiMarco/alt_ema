@@ -3,6 +3,8 @@ set -e
 
 cd ..
 
+REPETITIONS=30
+
 for i in $(seq 1 $REPETITIONS); do
     python -m bin.test_generation.acme \
         --initial_users 10 \
