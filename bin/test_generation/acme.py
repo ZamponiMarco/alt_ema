@@ -73,7 +73,8 @@ if __name__ == "__main__":
                 "status": status,
                 "time": time,
                 "solutions": solutions,
-                "users": [el.tolist() for el in l] if l is not None else []
+                "users": [el.tolist() for el in l] if l is not None else [],
+                "mu": network.mu.tolist()
             }
         with open(file, 'w') as f:
             json.dump(results, f, indent=4)
