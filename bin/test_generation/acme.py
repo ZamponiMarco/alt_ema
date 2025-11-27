@@ -28,7 +28,12 @@ if __name__ == "__main__":
     args.add_argument('--tolerance', type=float, help='Tolerance for the optimization objective.')
     args.add_argument('--alpha', type=int, help='Alpha parameter for the optimization objective.')
     args.add_argument('--beta', type=int, help='Beta parameter for the optimization objective.')
+    args.add_argument('--perturbation', type=float, help='Perturbation factor for the service rates.')
     cli_args = args.parse_args()
+    
+    if cli_args.perturbation is not None:
+        network.mu[1:] = network.mu[1:] * (1 + cli_args.perturbation * (2 * np.random.rand(network.stations - 1) - 1))
+    print(f"Using service rates: {network.mu}")
     
     network.set_controllers(
         [constant_controller(network, 0, network.max_users)] +
