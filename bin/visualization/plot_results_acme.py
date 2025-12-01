@@ -5,6 +5,7 @@ import re
 from matplotlib.legend_handler import HandlerTuple
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import stats
 
 from libs.qn.examples.closed_queuing_network import acmeair_qn, example1, example2
 from libs.qn.examples.controller import constant_controller
@@ -132,6 +133,20 @@ if __name__ == '__main__':
         print("RTV Measured:", measured_rtv)
         print("RTV Measured Std:", measured_rtv_std)
         print("RTV Predicted:", predicted_rtv)
+
+        rtv_threshold = 20.0
+        diffs = rtvs - rtv_threshold
+        w_stat, p_value = stats.wilcoxon(diffs, alternative='greater')
+        print(f"Wilcoxon Statistic: {w_stat}")
+        print(f"P-value: {p_value:.5e}")
+
+        if p_value < 0.05:
+            print("\nCONCLUSION: REJECT NULL HYPOTHESIS.")
+            print("The measured values are statistically significantly greater than 20.")
+            print("The fault is effectively exposed.")
+        else:
+            print("\nCONCLUSION: FAIL TO REJECT NULL.")
+            print("The measured values are not significantly different from 20.")
         
         if arrival_data:
             plot_results(arrival_data, theory_arrival_rates, f'{change_interval_folder}_arrival_rates')
