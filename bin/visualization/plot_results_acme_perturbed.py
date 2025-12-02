@@ -169,6 +169,8 @@ if __name__ == '__main__':
                 plt.close()
     
     rtvs = np.array(total_rtvs)
+    print(f"MEAN: {rtvs.mean()}")
+    print(f"STD. DEV: {rtvs.std()}")
     rtv_threshold = 20.0
     diffs = rtvs - rtv_threshold
     w_stat, p_value = stats.wilcoxon(diffs, alternative='greater')
