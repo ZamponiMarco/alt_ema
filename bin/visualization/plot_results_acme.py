@@ -69,7 +69,7 @@ s, c = network.steady_state_simulation(
 
 theory_arrival_rates = s
 
-theory_base_response_times = (TRAJECTORY / np.array(s[:,0]))-network.mu[0]
+theory_base_response_times = (TRAJECTORY / np.array(s[:,0]))- 1/network.mu[0]
 
 def plot_results(pd_data, theory, output_file):
     plt.figure(figsize=(6, 3.5))

@@ -221,8 +221,8 @@ def acmeair_qn():
         mu,
         max_cores,
         min_cores,
-        60,  # total users
-        1.0,     # assignment iterations
+        60,
+        1.0,
         30
     )
 
