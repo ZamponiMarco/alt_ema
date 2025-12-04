@@ -110,6 +110,7 @@ if __name__ == '__main__':
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
     # Iterate experiments i = 1..30
     total_rtvs = []
+    predicted_rtvs = []
     for exp_id in range(1, 31):
         workload_path = os.path.join(TRAJECTORY_FOLDER, f'test_acme_perturbed_{exp_id}.json')
         sim_base_folder = os.path.join(SIMULATION_ROOT, str(exp_id))
@@ -135,6 +136,7 @@ if __name__ == '__main__':
         measured_rtv = network.compute_rtv(trajectory, s)
         total_rtvs += [measured_rtv]
         predicted_rtv = network.compute_rtv(trajectory, theory_arrival_rates)
+        predicted_rtvs += [predicted_rtv]
 
         print(f"[exp {exp_id}] RTV Measured:", measured_rtv)
         print(f"[exp {exp_id}] RTV Predicted:", predicted_rtv)
@@ -169,6 +171,8 @@ if __name__ == '__main__':
                 plt.close()
     
     rtvs = np.array(total_rtvs)
+    predicted_rtvs = np.array(predicted_rtvs)
+    
     print(f"MEAN: {rtvs.mean()}")
     print(f"STD. DEV: {rtvs.std()}")
     rtv_threshold = 20.0
@@ -184,3 +188,9 @@ if __name__ == '__main__':
     else:
         print("\nCONCLUSION: FAIL TO REJECT NULL.")
         print("The measured values are not significantly different from 20.")
+        
+    print("Spearman Rank Correlation: Is the prediction correlated with measurement?")
+    rho, p_value = stats.spearmanr(predicted_rtvs, rtvs)
+
+    print(f"Spearman Rank Correlation: {rho}")
+    print(f"P-value: {p_value}")

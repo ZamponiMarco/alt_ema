@@ -8,6 +8,7 @@ from matplotlib.legend_handler import HandlerTuple
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 from libs.qn.examples.closed_queuing_network import example1, example2
 from libs.qn.examples.controller import constant_controller
@@ -103,13 +104,14 @@ if __name__ == '__main__':
             arrival_data = process_subfolder(simulation_folder, 'arrival_rates', r'Throughput\[(\d+)\]')
             response_data = process_subfolder(simulation_folder, 'response_times', r'ResponseTime\[(\d+)\]')
             
-            s = np.zeros((len(trajectory), network.stations - 1))
+            s = np.zeros((len(trajectory), network.stations))
             for i in range(len(trajectory)):
                 for j in range(network.stations - 1):
-                    s[i, j] = arrival_data[j + 1][0][i]
-                    
+                    s[i, j + 1] = arrival_data[j + 1][0][i]
+                P = network.probabilities[1:, 0].T
+                s[i, 0] = P@s[i, 1:]
             measured_rtv = network.compute_rtv(trajectory, s)
-            predicted_rtv = network.compute_rtv(trajectory, theory_arrival_rates[:, 1:])
+            predicted_rtv = network.compute_rtv(trajectory, theory_arrival_rates)
             
             print("RTV Measured:", measured_rtv)
             print("RTV Predicted:", predicted_rtv)
@@ -154,6 +156,40 @@ if __name__ == '__main__':
         relative_differences = (measured_rtvs - predicted_rtvs) / measured_rtvs
         print("Relative differences (measured - predicted) / predicted:", relative_differences)
         print(pd.Series(relative_differences).describe())
+        
+        print("Do the traces cause real failures?")
+        
+        w_stat, p_value = stats.wilcoxon(measured_rtvs - 20, alternative='greater')
+        print(f"Wilcoxon Statistic: {w_stat}")
+        print(f"P-value: {p_value:.5e}")
+        
+        if p_value < 0.05:
+            print("\nCONCLUSION: REJECT NULL HYPOTHESIS.")
+            print("The measured values are statistically significantly greater than 20.")
+            print("The fault is effectively exposed.")
+        else:
+            print("\nCONCLUSION: FAIL TO REJECT NULL.")
+            print("The measured values are not significantly different from 20.")
+        
+        print("Is under-provisioning estimating conservative?")
+        
+        w_stat, p_value = stats.wilcoxon(measured_rtvs - predicted_rtvs, alternative='greater')
+        print(f"Wilcoxon Statistic: {w_stat}")
+        print(f"P-value: {p_value:.5e}")
+        
+        if p_value < 0.05:
+            print("\nCONCLUSION: REJECT NULL HYPOTHESIS.")
+            print("The measured values are statistically significantly greater than the predicted ones.")
+        else:
+            print("\nCONCLUSION: FAIL TO REJECT NULL.")
+            print("The measured values are not significantly different from the predicted ones.")
+        
+        print("Spearman Rank Correlation: Is the prediction correlated with measurement?")
+        rho, p_value = stats.spearmanr(predicted_rtvs, measured_rtvs)
+
+        print(f"Spearman Rank Correlation: {rho}")
+        print(f"P-value: {p_value}")
+        
         # Horizontal seaborn boxplot of relative differences with whiskers at 10th and 90th percentiles
         os.makedirs(PICS_FOLDER, exist_ok=True)
         sns.set_theme(style='whitegrid', context='paper')
