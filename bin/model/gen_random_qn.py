@@ -126,7 +126,8 @@ def print_configuration(args):
         print(f"    Max mu:               {args.max_mu}")
 
     print("\n  Filter Parameters:")
-    print(f"    Filter target (max):   {args.filter_target}")
+    print(f"    Filter target (max):   {args.filter_target_max}")
+    print(f"    Filter target (min):   {args.filter_target_min}")
     print("=" * 60 + "\n")
 
 
