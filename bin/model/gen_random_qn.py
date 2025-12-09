@@ -47,8 +47,8 @@ Examples:
         "-q",
         "--num-networks",
         type=int,
-        default=10,
-        help="Number of queuing networks to generate (default: 10)",
+        default=50,
+        help="Number of queuing networks to generate (default: 50)",
     )
 
     # Optional generation parameters
@@ -157,9 +157,6 @@ def main():
             k=args.k_parameter,
             min_mu=args.min_mu,
             max_mu=args.max_mu,
-        )
-        qn.set_controllers(
-            [constant_controller(qn, 0, qn.max_users)] + autoscalers["hpa50"](qn)
         )
 
         if qn_filter(qn):
