@@ -57,7 +57,6 @@ if __name__ == "__main__":
             results = {
                     "status": status,
                     "time": time,
-                    "solutions": solutions,
                     "users": [el.tolist() for el in l] if l is not None else []
                 }
             with open(file, 'w') as f:
