@@ -15,12 +15,17 @@ objectives = ['overprovisioning', 'underprovisioning', 'underprovisioning_time',
 if __name__ == "__main__":
     
     args = argparse.ArgumentParser(description='Generate optimal loads for random queuing networks.')
+    args.add_argument('--qn-folder', type=str, default=QN_FOLDER, help='Folder containing the queuing networks.')
+    args.add_argument('--output-folder', type=str, default=OUTPUT_FOLDER, help='Output folder for the workloads.')
     args.add_argument('--horizon', type=int, default=24, help='Horizon for the simulation.')
     args.add_argument('--initial_users', type=int, default=1, help='Initial number of users.')
     args.add_argument('--objective', type=str, default='underprovisioning', choices=objectives, help='Objective to optimize.')
     args.add_argument('--shape', type=str, default='sawtooth', choices=shapes, help='Load shape.')
     args.add_argument('--time_limit', type=int, default=3600, help='Time limit for the optimization in seconds.')
     cli_args = args.parse_args()
+    
+    QN_FOLDER = cli_args.qn_folder
+    OUTPUT_FOLDER = cli_args.output_folder
     
     for file in os.listdir(QN_FOLDER):
         network: ClosedQueuingNetwork = ClosedQueuingNetwork.load(os.path.join(QN_FOLDER, file))
