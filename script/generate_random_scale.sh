@@ -12,7 +12,9 @@ python -m bin.model.gen_random_qn \
   --max-users 300 \
   --k-parameter 5 \
   --min-mu 25 \
-  --max-mu 100
+  --max-mu 100 \
+  --filter-target-max 0.6 \
+  --filter-target-min 0.4
 
 # Configuration 2: 30 stations, 30 skew, 180 users, k=4, mu=(15,60)
 python -m bin.model.gen_random_qn \
@@ -23,7 +25,9 @@ python -m bin.model.gen_random_qn \
   --max-users 180 \
   --k-parameter 4 \
   --min-mu 15 \
-  --max-mu 60
+  --max-mu 60 \
+  --filter-target-max 0.6 \
+  --filter-target-min 0.4
 
 # Configuration 3: 15 stations, 15 skew, 90 users, k=2, mu=(7.5,30)
 python -m bin.model.gen_random_qn \
@@ -34,7 +38,9 @@ python -m bin.model.gen_random_qn \
   --max-users 90 \
   --k-parameter 2 \
   --min-mu 7.5 \
-  --max-mu 30
+  --max-mu 30 \
+  --filter-target-max 0.6 \
+  --filter-target-min 0.4
 
 # Configuration 4: 10 stations, 10 skew, 60 users, k=2, mu=(5,20)
 python -m bin.model.gen_random_qn \
@@ -45,4 +51,6 @@ python -m bin.model.gen_random_qn \
   --max-users 60 \
   --k-parameter 2 \
   --min-mu 5 \
-  --max-mu 20
+  --max-mu 20 \
+  --filter-target-max 0.6 \
+  --filter-target-min 0.4

@@ -88,10 +88,17 @@ Examples:
 
     # Filter parameters
     parser.add_argument(
-        "--filter-target",
+        "--filter-target-max",
         type=float,
         default=0.5,
         help="Maximum value for QN filter (default: 0.5)",
+    )
+    
+    parser.add_argument(
+        "--filter-target-min",
+        type=float,
+        default=0,
+        help="Minimum value for QN filter (default: 0)",
     )
 
     return parser.parse_args()
@@ -141,7 +148,8 @@ def main():
     def qn_filter(qn):
         """Filter function for valid queuing networks."""
         return (
-            np.dot(qn.visit_vector, 1 / qn.mu[1:]) <= args.filter_target
+            np.dot(qn.visit_vector, 1 / qn.mu[1:]) <= args.filter_target_max
+            and np.dot(qn.visit_vector, 1 / qn.mu[1:]) >= args.filter_target_min
             and all(qn.visit_vector != 0)
         )
 
