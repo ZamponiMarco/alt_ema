@@ -11,9 +11,10 @@ from libs.qn.pwa.pwa_function import PWAFunction, gurobi_get_pwa_model
 import joblib
 
 solutions = []
+first_feasible_only = False
 
 def callback_feasible_time(model, where):
-    global feas_time
+    global feas_time, first_feasible_only
     if where == GRB.Callback.MIPSOL:
         feas_time = model.cbGet(GRB.Callback.RUNTIME)
         solution = model.cbGet(GRB.Callback.MIPSOL_OBJ)
@@ -21,6 +22,8 @@ def callback_feasible_time(model, where):
         if solution < best_solution:
             solutions.append((feas_time, solution))
             print(f"New feasible solution found at time: {feas_time:.2f} seconds, objective: {solution:.2f}")
+            if first_feasible_only:
+                model.terminate()
 
 class ClosedQueuingNetwork:
 
@@ -207,6 +210,7 @@ class ClosedQueuingNetwork:
         return s, c
 
     def model(self, horizon, loads, c_init, simulation_ticks_update, options: dict = {}):
+        global first_feasible_only
         simulation = False
         if horizon is None:
             horizon = len(loads)
@@ -214,6 +218,7 @@ class ClosedQueuingNetwork:
 
         num_ticks = int(horizon / simulation_ticks_update)
         
+        first_feasible_only = options.get('first_feasible', False)
         objective = options.get('objective', 'underprovisioning')
         shape = options.get('shape', 'free')
         tol = options.get('tolerance', 20)

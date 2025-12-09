@@ -91,7 +91,7 @@ Examples:
         "--filter-target",
         type=float,
         default=0.5,
-        help="Minimum value for QN filter (default: 0.5)",
+        help="Maximum value for QN filter (default: 0.5)",
     )
 
     return parser.parse_args()
@@ -119,7 +119,7 @@ def print_configuration(args):
         print(f"    Max mu:               {args.max_mu}")
 
     print("\n  Filter Parameters:")
-    print(f"    Filter target (min):   {args.filter_target}")
+    print(f"    Filter target (max):   {args.filter_target}")
     print("=" * 60 + "\n")
 
 
@@ -141,7 +141,7 @@ def main():
     def qn_filter(qn):
         """Filter function for valid queuing networks."""
         return (
-            np.dot(qn.visit_vector, 1 / qn.mu[1:]) > args.filter_target
+            np.dot(qn.visit_vector, 1 / qn.mu[1:]) <= args.filter_target
             and all(qn.visit_vector != 0)
         )
 
