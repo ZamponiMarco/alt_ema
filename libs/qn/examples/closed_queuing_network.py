@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from scipy.sparse import lil_matrix, csr_matrix
 
@@ -120,18 +121,18 @@ def example7_sparse() -> ClosedQueuingNetwork:
 
     return network
 
-def random_qn(stations) -> ClosedQueuingNetwork:
+def random_qn(stations, k = 2, skewness = 10, max_users = 80, min_mu = 1, max_mu = 10) -> ClosedQueuingNetwork:
 
-    probabilities = generate_matrix(stations + 1, k = 2)
+    probabilities = generate_matrix(stations + 1, k = k)
     entry_p = probabilities[0, 1:]
     P = probabilities[1:, 1:]
 
-    mu = np.random.uniform(1.0, 10.0, size=stations)
+    mu = np.random.uniform(min_mu, max_mu, size=stations)
 
     max_cores = np.array([8.0]*stations)
     min_cores = np.ones(stations)
     
-    skewness = 15
+    skewness = skewness
     max_users = 80
     think_time = np.random.uniform(0.5, 2.0)
 
@@ -180,13 +181,13 @@ def generate_matrix(n, k=10, seed=None):
         weights /= weights.sum()
         for idx, val in zip(row_indices, weights):
             P[i, idx] = val
+            
 
     P_dense = P.toarray()
     np.fill_diagonal(P_dense, 0.0)
     P_dense /= P_dense.sum(axis=1, keepdims=True) 
-    P_rounded = np.round(P_dense, 2)
 
-    return P_rounded
+    return P_dense
 
 def acmeair_qn():
     stations = 9

@@ -51,7 +51,8 @@ class ClosedQueuingNetwork:
         if not np.isclose(entry_probabilities.sum(), 1.0):
             raise ValueError("Entry probabilities must sum to 1.0")
 
-        if not np.all(np.sum(probabilities, axis=1) <= 1.0):
+        if not np.all(np.sum(probabilities, axis=1) <= 1.0 + 1e-9):
+            print(np.sum(probabilities, axis=1))
             raise ValueError("Transition probabilities must sum at most to 1.0")
 
         self.stations: int = stations + 1
