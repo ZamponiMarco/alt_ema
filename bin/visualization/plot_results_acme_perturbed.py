@@ -5,6 +5,7 @@ import re
 from matplotlib.legend_handler import HandlerTuple
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from scipy import stats
 
 from libs.qn.examples.closed_queuing_network import acmeair_qn, example1, example2
@@ -173,15 +174,14 @@ if __name__ == '__main__':
     rtvs = np.array(total_rtvs)
     predicted_rtvs = np.array(predicted_rtvs)
     
-    print(f"MEAN: {rtvs.mean()}")
-    print(f"STD. DEV: {rtvs.std()}")
+    print(pd.Series(rtvs).describe())
     rtv_threshold = 20.0
     diffs = rtvs - rtv_threshold
     w_stat, p_value = stats.wilcoxon(diffs, alternative='greater')
     print(f"Wilcoxon Statistic: {w_stat}")
     print(f"P-value: {p_value:.5e}")
 
-    if p_value < 0.05:
+    if p_value < 0.01:
         print("\nCONCLUSION: REJECT NULL HYPOTHESIS.")
         print("The measured values are statistically significantly greater than 20.")
         print("The fault is effectively exposed.")

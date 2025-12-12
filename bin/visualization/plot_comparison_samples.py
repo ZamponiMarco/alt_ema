@@ -168,7 +168,7 @@ def plot_combined_summary(ga_dfs, random_dfs, xlim_max=500.0, ax=None, is_inner=
     
     if not is_inner:
         ax.set_xlabel('# Samples', fontsize=12)
-        ax.set_ylabel('$- \\rho^{\\ast}_{\\varphi}$', fontsize=12)
+        ax.set_ylabel('$|\\rho^{\\ast}_{\\varphi}|$', fontsize=12)
     ax.set_xlim(0.0, xlim_max)
     ax.set_ylim(bottom=-1.0, top=max_y + 5)
     ax.grid(True, linestyle='--', alpha=0.6)

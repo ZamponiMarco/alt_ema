@@ -5,6 +5,7 @@ import re
 from matplotlib.legend_handler import HandlerTuple
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from scipy import stats
 
 from libs.qn.examples.closed_queuing_network import acmeair_qn, example1, example2
@@ -130,8 +131,7 @@ if __name__ == '__main__':
         measured_rtv_std = rtvs.std()
         predicted_rtv = network.compute_rtv(TRAJECTORY, theory_arrival_rates)
         
-        print("RTV Measured:", measured_rtv)
-        print("RTV Measured Std:", measured_rtv_std)
+        print(pd.Series(rtvs).describe())
         print("RTV Predicted:", predicted_rtv)
 
         rtv_threshold = 20.0
@@ -140,7 +140,7 @@ if __name__ == '__main__':
         print(f"Wilcoxon Statistic: {w_stat}")
         print(f"P-value: {p_value:.5e}")
 
-        if p_value < 0.05:
+        if p_value < 0.01:
             print("\nCONCLUSION: REJECT NULL HYPOTHESIS.")
             print("The measured values are statistically significantly greater than 20.")
             print("The fault is effectively exposed.")

@@ -127,7 +127,7 @@ def plot_combined_summary(ga_dfs, opt_dfs, output_name='combined_summary.png'):
         ax.fill_between(test_t, test_mean - test_std, test_mean + test_std, color='lightcoral', alpha=0.2, step='post')
 
     ax.set_xlabel('$t_{\\text{clock}}$ (seconds)', fontsize=12)
-    ax.set_ylabel('$- \\rho^{\\ast}_{\\varphi}$', fontsize=12)
+    ax.set_ylabel('$|\\rho^{\\ast}_{\\varphi}|$', fontsize=12)
     ax.set_xlim(0.0, 300)
     ax.set_ylim(bottom=0.0)
     ax.grid(True, linestyle='--', alpha=0.6)

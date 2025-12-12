@@ -72,7 +72,7 @@ if __name__ == '__main__':
 	if test_trajectory is not None and test_trajectory.size > 0:
 		test_ext = np.concatenate([test_trajectory, [test_trajectory[-1]]])
 		x_test = np.arange(len(test_ext))
-		plt.step(x_test, test_ext, where='post', color='black', label='Nominal', linestyle='--')
+		plt.step(x_test, test_ext, where='post', color='black', label='Base Model Trace', linestyle='--')
 
 	# Summary statistics (mean and std. dev.)
 	mean = aligned.mean(axis=0)

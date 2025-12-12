@@ -157,13 +157,16 @@ if __name__ == '__main__':
         print("Relative differences (measured - predicted) / predicted:", relative_differences)
         print(pd.Series(relative_differences).describe())
         
+        print("Measured RTVs:")
+        print(pd.Series(measured_rtvs).describe())
+        
         print("Do the traces cause real failures?")
         
         w_stat, p_value = stats.wilcoxon(measured_rtvs - 20, alternative='greater')
         print(f"Wilcoxon Statistic: {w_stat}")
         print(f"P-value: {p_value:.5e}")
         
-        if p_value < 0.05:
+        if p_value < 0.01:
             print("\nCONCLUSION: REJECT NULL HYPOTHESIS.")
             print("The measured values are statistically significantly greater than 20.")
             print("The fault is effectively exposed.")
@@ -177,7 +180,7 @@ if __name__ == '__main__':
         print(f"Wilcoxon Statistic: {w_stat}")
         print(f"P-value: {p_value:.5e}")
         
-        if p_value < 0.05:
+        if p_value < 0.01:
             print("\nCONCLUSION: REJECT NULL HYPOTHESIS.")
             print("The measured values are statistically significantly greater than the predicted ones.")
         else:
