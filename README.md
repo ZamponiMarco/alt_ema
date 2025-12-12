@@ -47,6 +47,14 @@ From the workload trace file, extract the trace and paste it in the `TRAJECTORY`
 
 We can plot the results of the experiments calling the script `plot_acme.sh`. In this case, pictures plotting the experiment data can be found in folder `resources/pics`.
 
+### AcmeAir Perturbed
+
+We start by generating the workload traces for the perturbed models using the script `load_acme_perturbed.sh`. All the generated workload traces are saved in folder `resources/workloads`.
+
+We can now execute the simulations using the script `simulation_acme_perturbed.sh`, which will execute all the workload traces over the AcmeAir benchmark. After the executions, data extracted during the experiments will be saved in folder `resources/simulation`.
+
+We can plot the results of the experiments calling the script `plot_acme_perturbed.sh`. In this case, pictures plotting the experiment data can be found in folder `resources/pics`.
+
 ### Random
 
 Start by generating the random QN models calling the script `generate_random.sh`. This will generate the folder `resources/random_qns` containing the list of models.

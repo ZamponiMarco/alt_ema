@@ -11,9 +11,10 @@ from libs.qn.pwa.pwa_function import PWAFunction, gurobi_get_pwa_model
 import joblib
 
 solutions = []
+first_feasible_only = False
 
 def callback_feasible_time(model, where):
-    global feas_time
+    global feas_time, first_feasible_only
     if where == GRB.Callback.MIPSOL:
         feas_time = model.cbGet(GRB.Callback.RUNTIME)
         solution = model.cbGet(GRB.Callback.MIPSOL_OBJ)
@@ -21,6 +22,8 @@ def callback_feasible_time(model, where):
         if solution < best_solution:
             solutions.append((feas_time, solution))
             print(f"New feasible solution found at time: {feas_time:.2f} seconds, objective: {solution:.2f}")
+            if first_feasible_only:
+                model.terminate()
 
 class ClosedQueuingNetwork:
 
@@ -51,7 +54,8 @@ class ClosedQueuingNetwork:
         if not np.isclose(entry_probabilities.sum(), 1.0):
             raise ValueError("Entry probabilities must sum to 1.0")
 
-        if not np.all(np.sum(probabilities, axis=1) <= 1.0):
+        if not np.all(np.sum(probabilities, axis=1) <= 1.0 + 1e-9):
+            print(np.sum(probabilities, axis=1))
             raise ValueError("Transition probabilities must sum at most to 1.0")
 
         self.stations: int = stations + 1
@@ -206,6 +210,7 @@ class ClosedQueuingNetwork:
         return s, c
 
     def model(self, horizon, loads, c_init, simulation_ticks_update, options: dict = {}):
+        global first_feasible_only
         simulation = False
         if horizon is None:
             horizon = len(loads)
@@ -213,6 +218,7 @@ class ClosedQueuingNetwork:
 
         num_ticks = int(horizon / simulation_ticks_update)
         
+        first_feasible_only = options.get('first_feasible', False)
         objective = options.get('objective', 'underprovisioning')
         shape = options.get('shape', 'free')
         tol = options.get('tolerance', 20)
@@ -340,7 +346,7 @@ class ClosedQueuingNetwork:
                     model.addConstr(under_base_aux == l[t] - ( self.mu[0] + 1) * q[t][0], "under_base_aux")
 
                 if objective == 'underprovisioning':
-                    model.addConstr(gp.quicksum(underprovisioning_base[t] for t in range(horizon)) >= options.get('tol', 20))
+                    model.addConstr(gp.quicksum(underprovisioning_base[t] for t in range(horizon)) >= tol)
                    
                     underprovisioning_base_obj = - gp.quicksum(objective_mask[t] * underprovisioning_base[t] for t in range(horizon))
                     model.setObjectiveN(underprovisioning_base_obj, index=0, weight=options.get('alpha', 4))
@@ -368,7 +374,7 @@ class ClosedQueuingNetwork:
                     model.addConstrs((overprovisioning[t][j] == gp.max_(over_aux[j], 0) for j in range(self.stations)), f"overprovisioning_{t}")
                 
                 if objective == 'overprovisioning':
-                    model.addConstr(gp.quicksum(overprovisioning[t][j] for t in range(horizon) for j in range(1, self.stations)) >= options.get('tol', 20))
+                    model.addConstr(gp.quicksum(overprovisioning[t][j] for t in range(horizon) for j in range(1, self.stations)) >= tol)
                     
                     overprovisioning_obj = - gp.quicksum(objective_mask[t] * overprovisioning[t][j] for t in range(horizon) for j in range(1, self.stations))
                     model.setObjectiveN(overprovisioning_obj, index=0, weight=options.get('alpha', 10))

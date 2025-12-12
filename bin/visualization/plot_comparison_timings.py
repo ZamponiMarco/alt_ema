@@ -4,6 +4,8 @@ import pandas as pd
 import json
 import os
 import glob
+
+from scipy import stats
 from libs.qn.examples.controller import constant_controller, autoscalers
 from libs.qn.model.queuing_network import ClosedQueuingNetwork
 from libs.qn.examples.closed_queuing_network import acmeair_qn
@@ -124,8 +126,8 @@ def plot_combined_summary(ga_dfs, opt_dfs, output_name='combined_summary.png'):
         ax.step(test_t, test_mean, label='MILP', color='lightcoral', where='post')
         ax.fill_between(test_t, test_mean - test_std, test_mean + test_std, color='lightcoral', alpha=0.2, step='post')
 
-    ax.set_xlabel('Time (seconds)', fontsize=12)
-    ax.set_ylabel('Best $- \\rho_{\\varphi}$', fontsize=12)
+    ax.set_xlabel('$t_{\\text{clock}}$ (seconds)', fontsize=12)
+    ax.set_ylabel('$|\\rho^{\\ast}_{\\varphi}|$', fontsize=12)
     ax.set_xlim(0.0, 300)
     ax.set_ylim(bottom=0.0)
     ax.grid(True, linestyle='--', alpha=0.6)
@@ -147,3 +149,25 @@ if __name__ == "__main__":
     ga_dfs, test_dfs = process_solutions_data()
 
     plot_combined_summary(ga_dfs, test_dfs, output_name='combined_summary_timings.pdf')
+    
+    ga_first_feasible_times = np.array([el[el.fitness <= -20].iloc[0].time for el in ga_dfs ])
+    test_first_feasible_times = np.array([el[el.fitness <= -20].iloc[0].time for el in test_dfs])
+    
+    # H1: MILP is faster (MILP times < GA times).
+    print("MILP faster than GA for first feasible?")
+    
+    statistic, p_value = stats.mannwhitneyu(test_first_feasible_times, ga_first_feasible_times, alternative='less')
+
+    print(f"Mann-Whitney U statistic: {statistic}")
+    print(f"P-value (MILP median < GA median): {p_value}")
+    
+    ga_best_fitnesses = np.array([el.iloc[-1].fitness for el in ga_dfs])
+    test_best_fitnesses = np.array([el.iloc[-1].fitness for el in test_dfs])
+    
+    # H1: MILP is better (MILP fitness < GA fitness (both negated)).
+    print("MILP better than GA for obj value after timeout?")
+    
+    statistic, p_value = stats.mannwhitneyu(test_best_fitnesses, ga_best_fitnesses, alternative='less')
+
+    print(f"Mann-Whitney U statistic: {statistic}")
+    print(f"P-value (MILP median < GA median): {p_value}")

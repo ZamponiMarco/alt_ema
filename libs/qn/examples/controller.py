@@ -110,6 +110,11 @@ def cpu_step_controller(network: ClosedQueuingNetwork, station: int, steps: list
         value_bounds=(lower_cores, upper_cores)  # Bounds for the value
     )
 
+step_1 = [
+    [0.0, 0.3, 1, -1],
+    [0.3, 0.7, 1, 0],
+    [0.7, 1.0, 1, 1]
+]
 
 step_2 = [
     [0.0, 0.2, 1,-2],
@@ -118,9 +123,21 @@ step_2 = [
     [0.6, 0.8, 1, 1],
     [0.8, 1.0, 1, 2]
 ]
+
+step_3 = [
+    [0.0, 0.15, 1, -2],
+    [0.15, 0.3, 1, -1.5],
+    [0.3, 0.4, 1, -1],
+    [0.4, 0.6, 1, 0],
+    [0.6, 0.75, 1, 1],
+    [0.75, 0.85, 1, 1.5],
+    [0.85, 1.0, 1, 2]
+]
+
 autoscalers = {
     'hpa50': lambda network: [cpu_hpa(network, 0.5, station) for station in range(1, network.stations)],
     'hpa60': lambda network: [cpu_hpa(network, 0.6, station) for station in range(1, network.stations)],
-    'step1': lambda network: [cpu_threshold_controller(network, station, 0.3, 0.7, 1) for station in range(1, network.stations)],
+    'step1': lambda network: [cpu_step_controller(network, station, step_1) for station in range(1, network.stations)],
     'step2': lambda network: [cpu_step_controller(network, station, step_2) for station in range(1, network.stations)],
+    'step3': lambda network: [cpu_step_controller(network, station, step_3) for station in range(1, network.stations)],
 }
